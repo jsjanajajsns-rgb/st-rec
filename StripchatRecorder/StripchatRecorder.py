@@ -75,6 +75,11 @@ class Modelo(threading.Thread):
             self.file = os.path.join(setting['save_directory'], self.modelo, f'{datetime.datetime.fromtimestamp(time.time()).strftime("%Y.%m.%d_%H.%M.%S")}_{self.modelo}.mp4')
             try:
                 session = streamlink.Streamlink()
+                session.set_option("http-headers", {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Referer": f"https://stripchat.com/{self.modelo}",
+                    "Origin": "https://stripchat.com"
+                })
                 streams = session.streams(f'hlsvariant://{isOnline}')
                 stream = streams['best']
                 fd = stream.open()
@@ -124,7 +129,12 @@ class Modelo(threading.Thread):
 
     def isOnline(self):
         try:
-            resp = requests.get(f'https://stripchat.com/api/front/v2/models/username/{self.modelo}/cam').json()
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': 'https://stripchat.com/',
+                'Origin': 'https://stripchat.com'
+            }
+            resp = requests.get(f'https://stripchat.com/api/front/v2/models/username/{self.modelo}/cam', headers=headers).json()
             hls_url = ''
             if 'cam' in resp.keys():
                 if {'isCamAvailable', 'streamName', 'viewServers'} <= resp['cam'].keys():
