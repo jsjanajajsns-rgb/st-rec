@@ -149,9 +149,19 @@ class Modelo(threading.Thread):
                 if not cam.get('isCamAvailable', False):
                     return False
 
-                if {'isCamAvailable', 'streamName', 'viewServers'} <= cam.keys():
-                    if 'flashphoner-hls' in cam['viewServers'].keys():
-                        hls_url = f'https://b-{cam["viewServers"]["flashphoner-hls"]}.doppiocdn.com/hls/{cam["streamName"]}/{cam["streamName"]}.m3u8'
+                stream_name = cam.get('streamName', '')
+                if not stream_name:
+                    return False
+
+                # Try the new method - use viewServers if available
+                if cam.get('viewServers') and isinstance(cam['viewServers'], dict):
+                    if 'flashphoner-hls' in cam['viewServers']:
+                        hls_url = f'https://b-{cam["viewServers"]["flashphoner-hls"]}.doppiocdn.com/hls/{stream_name}/{stream_name}.m3u8'
+
+                # If viewServers not available, try direct URL with broadcastServer
+                if not hls_url:
+                    # Use streamlink to get the URL directly
+                    return f'https://stripchat.com/{self.modelo}'
 
             if len(hls_url):
                 return hls_url
