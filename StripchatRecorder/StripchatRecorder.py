@@ -134,17 +134,32 @@ class Modelo(threading.Thread):
                 'Referer': 'https://stripchat.com/',
                 'Origin': 'https://stripchat.com'
             }
-            resp = requests.get(f'https://stripchat.com/api/front/v2/models/username/{self.modelo}/cam', headers=headers).json()
+            response = requests.get(f'https://stripchat.com/api/front/v2/models/username/{self.modelo}/cam', headers=headers, timeout=10)
+
+            if response.status_code != 200:
+                with open('log.log', 'a+') as f:
+                    f.write(f'\n{datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")} API ERROR for {self.modelo}: Status {response.status_code}\n')
+                return False
+
+            resp = response.json()
             hls_url = ''
+
             if 'cam' in resp.keys():
-                if {'isCamAvailable', 'streamName', 'viewServers'} <= resp['cam'].keys():
-                    if 'flashphoner-hls' in resp['cam']['viewServers'].keys():
-                        hls_url = f'https://b-{resp["cam"]["viewServers"]["flashphoner-hls"]}.doppiocdn.com/hls/{resp["cam"]["streamName"]}/{resp["cam"]["streamName"]}.m3u8'
+                cam = resp['cam']
+                if not cam.get('isCamAvailable', False):
+                    return False
+
+                if {'isCamAvailable', 'streamName', 'viewServers'} <= cam.keys():
+                    if 'flashphoner-hls' in cam['viewServers'].keys():
+                        hls_url = f'https://b-{cam["viewServers"]["flashphoner-hls"]}.doppiocdn.com/hls/{cam["streamName"]}/{cam["streamName"]}.m3u8'
+
             if len(hls_url):
                 return hls_url
             else:
                 return False
-        except:
+        except Exception as e:
+            with open('log.log', 'a+') as f:
+                f.write(f'\n{datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")} EXCEPTION in isOnline for {self.modelo}: {e}\n')
             return False
 
     def stop(self):
